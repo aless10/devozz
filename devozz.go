@@ -23,6 +23,7 @@ const (
 
 var (
 	runnerImage *ebiten.Image
+	bgImage     *ebiten.Image
 )
 
 type Character struct {
@@ -69,21 +70,31 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(screenWidth/2, screenHeight/2)
 
 	subrunner := runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight))
+	screen.DrawImage(bgImage, op)
 	screen.DrawImage(subrunner.(*ebiten.Image), op)
-
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
 }
 
-func main() {
+func init() {
 	// Decode an image from the image file's byte slice.
 	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
 	if err != nil {
 		log.Fatal(err)
 	}
 	runnerImage = ebiten.NewImageFromImage(img)
+
+	bgImg, _, err := image.Decode(bytes.NewReader(images.Tile_png))
+	if err != nil {
+		log.Fatal(err)
+	}
+	bgImage = ebiten.NewImageFromImage(bgImg)
+
+}
+
+func main() {
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Animation (Ebitengine Demo)")
