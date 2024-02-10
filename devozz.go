@@ -24,6 +24,15 @@ const (
 var (
 	runnerImage *ebiten.Image
 	bgImage     *ebiten.Image
+	ebitenImage *ebiten.Image
+)
+
+type Mode int
+
+const (
+	ModeTitle Mode = iota
+	ModeGame
+	ModeGameOver
 )
 
 type Character struct {
@@ -60,6 +69,7 @@ type Game struct {
 	count      int
 	character  Character
 	background Background
+	mode       Mode
 }
 
 func (g *Game) init() error {
@@ -88,30 +98,54 @@ func xBorderLeft(character *Character) bool {
 	return distanceFromBorder > 328
 }
 
+func hitBorder(character *Character) bool {
+	return (xBorderLeft(character) ||
+		xBorderRight(character) ||
+		yBorderDown(character) ||
+		yBorderUp(character))
+}
+
 func (g *Game) Update() error {
-	g.count++
+	switch g.mode {
+	case ModeTitle:
+		if ebiten.IsKeyPressed(ebiten.KeySpace) {
+			g.mode = ModeGame
+		}
+	case ModeGame:
 
-	if !xBorderLeft(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		g.character.x -= 2
-		// g.background.MoveLeft()
+		g.count++
+
+		if !xBorderLeft(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+			g.character.x -= 2
+			// g.background.MoveLeft()
+		}
+
+		if !xBorderRight(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+			g.character.x += 2
+			// g.background.MoveRight()
+		}
+
+		if !yBorderUp(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+			g.character.y -= 2
+			// g.background.MoveUp()
+		}
+
+		if !yBorderDown(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+			g.character.y += 2
+			// g.background.MoveDown()
+		}
+		if hitBorder(&g.character) {
+			g.mode = ModeGameOver
+		}
+	case ModeGameOver:
+		if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+			g.mode = ModeTitle
+			g.init()
+		}
+
 	}
-
-	if !xBorderRight(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		g.character.x += 2
-		// g.background.MoveRight()
-	}
-
-	if !yBorderUp(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		g.character.y -= 2
-		// g.background.MoveUp()
-	}
-
-	if !yBorderDown(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-		g.character.y += 2
-		// g.background.MoveDown()
-	}
-
 	return nil
+
 }
 
 func (g *Game) DrawBg(screen *ebiten.Image) {
@@ -133,14 +167,24 @@ func (g *Game) DrawBg(screen *ebiten.Image) {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	i := (g.count / 5) % frameCount
-	sx, sy := frameOX+i*frameWidth, frameOY
-	op.GeoM.Translate(float64(g.character.x)-float64(frameWidth)/40, float64(g.character.y)-float64(frameHeight)/40)
-	op.GeoM.Translate(screenWidth/2, screenHeight/2)
-	subrunner := runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight))
-	g.DrawBg(screen)
-	screen.DrawImage(subrunner.(*ebiten.Image), op)
+	switch g.mode {
+	case ModeTitle:
+		g.DrawBg(screen)
+	case ModeGame:
+
+		op := &ebiten.DrawImageOptions{}
+		i := (g.count / 5) % frameCount
+		sx, sy := frameOX+i*frameWidth, frameOY
+		op.GeoM.Translate(float64(g.character.x)-float64(frameWidth)/40, float64(g.character.y)-float64(frameHeight)/40)
+		op.GeoM.Translate(screenWidth/2, screenHeight/2)
+		subrunner := runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight))
+		g.DrawBg(screen)
+		screen.DrawImage(subrunner.(*ebiten.Image), op)
+	case ModeGameOver:
+
+		op := &ebiten.DrawImageOptions{}
+		screen.DrawImage(ebitenImage, op)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -161,6 +205,11 @@ func init() {
 	}
 	bgImage = ebiten.NewImageFromImage(bgImg)
 
+	ebiImg, _, err := image.Decode(bytes.NewReader(images.Ebiten_png))
+	if err != nil {
+		log.Fatal(err)
+	}
+	ebitenImage = ebiten.NewImageFromImage((ebiImg))
 }
 
 func main() {
