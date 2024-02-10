@@ -31,13 +31,40 @@ type Character struct {
 	y int
 }
 
+type Background struct {
+	x int
+	y int
+}
+
+func (p *Background) Position() (int, int) {
+	return p.x, p.y
+}
+
+func (p *Background) MoveLeft() {
+	p.x -= 2
+}
+
+func (p *Background) MoveRight() {
+	p.x += 2
+}
+
+func (p *Background) MoveDown() {
+	p.y += 2
+}
+
+func (p *Background) MoveUp() {
+	p.y -= 2
+}
+
 type Game struct {
-	count     int
-	character Character
+	count      int
+	character  Character
+	background Background
 }
 
 func (g *Game) init() error {
 	g.character = Character{}
+	g.background = Background{}
 	return nil
 }
 
@@ -45,21 +72,43 @@ func (g *Game) Update() error {
 	g.count++
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		g.character.x -= 2
+		// g.background.MoveLeft()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 		g.character.x += 2
+		// g.background.MoveRight()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
 		g.character.y -= 2
+		// g.background.MoveUp()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
 		g.character.y += 2
+		// g.background.MoveDown()
 	}
 
 	return nil
+}
+
+func (g *Game) DrawBg(screen *ebiten.Image) {
+
+	x16, y16 := g.background.Position()
+	offsetX, offsetY := float64(-x16)/16, float64(-y16)/16
+
+	// Draw bgImage on the screen repeatedly.
+	const repeat = 3
+	w, h := bgImage.Bounds().Dx(), bgImage.Bounds().Dy()
+	for j := 0; j < repeat; j++ {
+		for i := 0; i < repeat; i++ {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(w*i), float64(h*j))
+			op.GeoM.Translate(offsetX, offsetY)
+			screen.DrawImage(bgImage, op)
+		}
+	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -70,7 +119,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(screenWidth/2, screenHeight/2)
 
 	subrunner := runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight))
-	screen.DrawImage(bgImage, op)
+	g.DrawBg(screen)
 	screen.DrawImage(subrunner.(*ebiten.Image), op)
 }
 
