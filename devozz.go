@@ -68,24 +68,45 @@ func (g *Game) init() error {
 	return nil
 }
 
+func yBorderUp(character *Character) bool {
+	distanceFromBorder := screenHeight/2 + character.y
+	return distanceFromBorder <= 0
+}
+
+func yBorderDown(character *Character) bool {
+	distanceFromBorder := screenHeight/2 + character.y
+	return distanceFromBorder > 210
+}
+
+func xBorderRight(character *Character) bool {
+	distanceFromBorder := screenWidth/2 - character.x
+	return distanceFromBorder < 26
+}
+
+func xBorderLeft(character *Character) bool {
+	distanceFromBorder := screenWidth/2 - character.x
+	return distanceFromBorder > 328
+}
+
 func (g *Game) Update() error {
 	g.count++
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+
+	if !xBorderLeft(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		g.character.x -= 2
 		// g.background.MoveLeft()
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+	if !xBorderRight(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 		g.character.x += 2
 		// g.background.MoveRight()
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+	if !yBorderUp(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
 		g.character.y -= 2
 		// g.background.MoveUp()
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+	if !yBorderDown(&g.character) && ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
 		g.character.y += 2
 		// g.background.MoveDown()
 	}
@@ -117,7 +138,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	sx, sy := frameOX+i*frameWidth, frameOY
 	op.GeoM.Translate(float64(g.character.x)-float64(frameWidth)/40, float64(g.character.y)-float64(frameHeight)/40)
 	op.GeoM.Translate(screenWidth/2, screenHeight/2)
-
 	subrunner := runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight))
 	g.DrawBg(screen)
 	screen.DrawImage(subrunner.(*ebiten.Image), op)
