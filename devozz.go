@@ -98,6 +98,13 @@ func xBorderLeft(character *Character) bool {
 	return distanceFromBorder > 328
 }
 
+func hitBorder(character *Character) bool {
+	return (xBorderLeft(character) ||
+		xBorderRight(character) ||
+		yBorderDown(character) ||
+		yBorderUp(character))
+}
+
 func (g *Game) Update() error {
 	switch g.mode {
 	case ModeTitle:
@@ -127,7 +134,7 @@ func (g *Game) Update() error {
 			g.character.y += 2
 			// g.background.MoveDown()
 		}
-		if xBorderLeft(&g.character) || xBorderRight(&g.character) || yBorderDown(&g.character) || yBorderUp(&g.character) {
+		if hitBorder(&g.character) {
 			g.mode = ModeGameOver
 		}
 	case ModeGameOver:
